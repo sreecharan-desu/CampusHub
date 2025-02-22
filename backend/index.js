@@ -7,6 +7,7 @@ app.get('/', (req, res) => {
     res.send('Hello from backend');
 });
 
+
 app.get('/health-check', (res) => {
     res.send('Health ckeck OK');
 });

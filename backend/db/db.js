@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const connectDB = async () => {
     await mongoose.connect('mongodb+srv://srecharandesu:charan%402006@cluster0.a9berin.mongodb.net/CampusHuB')
@@ -43,7 +43,14 @@ const adminSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 // Mongoose Models
-export const User = mongoose.model('User', userSchema);
-export const Event = mongoose.model('Event', eventSchema);
-export const Registration = mongoose.model('Registration', registrationSchema);
-export const Admin = mongoose.model('Admin', adminSchema);
+const User = mongoose.model('User', userSchema);
+const Event = mongoose.model('Event', eventSchema);
+const Registration = mongoose.model('Registration', registrationSchema);
+const Admin = mongoose.model('Admin', adminSchema);
+
+module.exports = {
+    User,
+    Event,
+    Registration,
+    Admin
+};

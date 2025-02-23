@@ -1,7 +1,7 @@
-import express from 'express'; 
+import express from 'express';
 import bcrypt from "bcrypt";
-import { Admin as AdminModel, Event, Registration } from '../db/db.js'; 
-import jwt from "jsonwebtoken";
+import { Admin as AdminModel, Event, Registration, User } from '../db/db.js';
+import jwt from "jsonwebtoken"; import nodemailer from "nodemailer"
 import dotenv from "dotenv";
 import { z } from "zod";
 
@@ -28,6 +28,40 @@ const authenticateToken = (req, res, next) => {
         res.status(400).json({ msg: "Invalid token", success: false });
     }
 };
+
+const sendEventEmails = async (event) => {
+    try {
+        const users = await User.find().select("email");
+        if (!users.length) {
+            console.log("No users found. Skipping email notifications.");
+            return;
+        }
+
+        const emails = users.map(user => user.email);
+        console.log(`Sending emails to: ${emails.join(", ")}`);
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: emails,
+            subject: `New Event: ${event.title}`,
+            text: `A new event "${event.title}" is happening on ${event.date} at ${event.time} in ${event.location}. Don't miss it!`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Emails sent successfully:", info.response);
+    } catch (error) {
+        console.error("Error sending emails:", error);
+    }
+};
+
 
 // Middleware to check if Admin is an admin
 const isAdmin = async (req, res, next) => {
@@ -64,9 +98,9 @@ adminRouter.post('/signup', async (req, res) => {
 
         const hashrounds = 10;
         const hashedPassword = await bcrypt.hash(password, hashrounds);
-
+        const username = email.split("@")[0];
         const adminName = email.split("@")[0];
-        const newAdmin = new AdminModel({ adminName, email, password: hashedPassword });
+        const newAdmin = new AdminModel({ username, adminName, email, password: hashedPassword });
         await newAdmin.save();
 
         const token = jwt.sign({ id: newAdmin._id, email: newAdmin.email }, process.env.JWT_SECRET, { expiresIn: '2h' });
@@ -119,30 +153,36 @@ adminRouter.get('/profile', authenticateToken, async (req, res) => {
     }
 });
 
-adminRouter.get('/admins', authenticateToken, isAdmin, async (req, res) => {
-    try {
-        const admins = await AdminModel.find().select("-password");
-        res.json({ success: true, admins });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Server error', success: false });
-    }
-});
-
-adminRouter.delete('/admins/:id', authenticateToken, isAdmin, async (req, res) => {
-    try {
-        await AdminModel.findByIdAndDelete(req.params.id);
-        res.json({ msg: 'Admin deleted successfully', success: true });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ msg: 'Server error', success: false });
-    }
-});
-
+// Get all events
 adminRouter.get('/events', authenticateToken, isAdmin, async (req, res) => {
     try {
-        const registrations = await Registration.find().populate('admin', 'adminName email').populate('event', 'title date');
+        const events = await Event.find().populate('organizer', 'adminName email');
+        res.json({ success: true, events });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', success: false });
+    }
+});
+
+// Get users registered for a particular event
+adminRouter.get('/event/:eventId/registrations', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const registrations = await Registration.find({ event: eventId }).populate('user', 'adminName email');
         res.json({ success: true, registrations });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', success: false });
+    }
+});
+
+// Delete an event
+adminRouter.delete('/delete-event/:eventId', authenticateToken, isAdmin, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        await Event.findByIdAndDelete(eventId);
+        await Registration.deleteMany({ event: eventId });
+        res.json({ success: true, msg: 'Event deleted successfully' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'Server error', success: false });
@@ -151,17 +191,48 @@ adminRouter.get('/events', authenticateToken, isAdmin, async (req, res) => {
 
 adminRouter.post('/create-event', authenticateToken, async (req, res) => {
     try {
-        const { title, description, date, time, location } = req.body;
+        const { title, description, date, time, location, imageUrl, videoUrl } = req.body;
         if (!title || !date || !time || !location) {
             return res.status(400).json({ msg: 'Missing required fields', success: false });
         }
 
         const newEvent = new Event({
-            title, description, date, time, location, organizer: req.admin.id
+            title,
+            description,
+            date,
+            time,
+            location,
+            organizer: req.admin.id,
+            attendees: [],
+            imageUrl,
+            videoUrl
         });
         await newEvent.save();
 
+        await sendEventEmails(newEvent);
+
+
         res.status(201).json({ msg: 'Event created successfully', success: true, event: newEvent });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error', success: false });
+    }
+});
+
+adminRouter.put('/edit-event/:id', authenticateToken, async (req, res) => {
+    try {
+        const { title, description, date, time, location, imageUrl, videoUrl } = req.body;
+        const updatedEvent = await Event.findByIdAndUpdate(req.params.id, {
+            title, description, date, time, location, imageUrl, videoUrl
+        }, { new: true });
+
+        if (!updatedEvent) {
+            return res.status(404).json({ msg: "Event not found", success: false });
+        }
+
+        await sendEventEmails(updatedEvent);
+
+        res.status(200).json({ msg: "Event updated successfully", success: true, event: updatedEvent });
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'Server error', success: false });

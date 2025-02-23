@@ -1,33 +1,42 @@
 {
   "name": "campushub",
   "version": "1.0.0",
-  "description": "a central place for event management in campus",
+  "description": "a central place to manage all events in university",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sreecharan-desu/CampusHub.git"
+    "url": "campushub"
   },
+  "type": "module",
   "keywords": [
-    "cmapusHub"
+    "productivity"
   ],
-  "author": "SreeCharanDesu",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/sreecharan-desu/CampusHub/issues"
-  },
-  "homepage": "https://github.com/sreecharan-desu/CampusHub#readme",
+  "author": "SreeCharan Desu",
+  "license": "MIT",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
+    "express": "^4.19.2",
+    "exprss": "^0.0.1-security",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.10.1",
-    "nodemailer": "^6.10.0",
-    "zod": "^3.24.2"
+    "mongodb": "^6.8.0",
+    "mongoose": "^8.5.1",
+    "nativewind": "^4.1.23",
+    "nodemailer": "^6.9.16",
+    "react-particles": "^2.12.2",
+    "tailwind-react-native-classnames": "^3.0.1",
+    "tailwind-rn": "^4.2.0",
+    "tailwindcss-react-native": "^1.7.10",
+    "tsparticles": "^2.12.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   }
 }

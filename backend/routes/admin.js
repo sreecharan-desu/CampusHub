@@ -1,11 +1,10 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const { Admin: AdminModel, Event, Registration, User } = require('../db/db');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const dotenv = require('dotenv');
-const { z } = require('zod');
-
+import express from 'express';
+import bcrypt from 'bcrypt';
+import { Admin as AdminModel, Event, Registration, User } from '../db/db.js';
+import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+import { z } from 'zod';
 
 dotenv.config();
 export const adminRouter = express.Router();

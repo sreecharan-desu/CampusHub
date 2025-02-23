@@ -1,5 +1,5 @@
 import express from 'express'; import bcrypt from "bcrypt"
-import { User, Event, Registration } from '../db/db.js'; import jwt from "jsonwebtoken"
+import { User, Event, Registration } from './db.js'; import jwt from "jsonwebtoken"
 import dotenv from "dotenv";
 import { z } from "zod";
 import nodemailer from "nodemailer"

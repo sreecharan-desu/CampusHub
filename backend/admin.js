@@ -1,6 +1,6 @@
 import express from 'express';
 import bcrypt from "bcrypt";
-import { Admin as AdminModel, Event, Registration, User } from '../db/db.js';
+import { Admin as AdminModel, Event, Registration, User } from './db.js';
 import jwt from "jsonwebtoken"; import nodemailer from "nodemailer"
 import dotenv from "dotenv";
 import { z } from "zod";

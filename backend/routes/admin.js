@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { Admin: AdminModel, Event, Registration, User } = require('./db.js');
+const { Admin: AdminModel, Event, Registration, User } = require('../db/db');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const dotenv = require('dotenv');

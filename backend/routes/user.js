@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { User, Event, Registration } = require('./db.js');
+const { User, Event, Registration } = require('../db/db');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const { z } = require('zod');

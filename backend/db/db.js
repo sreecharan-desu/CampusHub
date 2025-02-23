@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 
-await mongoose.connect('mongodb+srv://srecharandesu:charan%402006@cluster0.a9berin.mongodb.net/CampusHuB')
+const connectDB = async () => {
+    await mongoose.connect('mongodb+srv://srecharandesu:charan%402006@cluster0.a9berin.mongodb.net/CampusHuB')
+}
+
+connectDB();
 
 // User Schema (for students/organizers)
 const userSchema = new mongoose.Schema({

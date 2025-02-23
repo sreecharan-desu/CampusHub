@@ -1,10 +1,9 @@
-import express from 'express';
-import { userRouter } from './user.js';
-import { adminRouter } from './admin.js';
+const express = require('express');
+const userRouter = require('./user.js');
+const adminRouter = require('./admin.js');
 
 
 const app = express();
-
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

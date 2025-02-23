@@ -1,10 +1,14 @@
-import express from 'express'; import bcrypt from "bcrypt"
-import { User, Event, Registration } from './db.js'; import jwt from "jsonwebtoken"
-import dotenv from "dotenv";
-import { z } from "zod";
-import nodemailer from "nodemailer"
+const express = require('express');
+const bcrypt = require('bcrypt');
+const { User, Event, Registration } = require('./db.js');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+const { z } = require('zod');
+const nodemailer = require('nodemailer');
+
 dotenv.config();
-export const userRouter = express.Router();
+exports.userRouter = express.Router();
+
 
 // Zod schema for input validation
 const authSchema = z.object({

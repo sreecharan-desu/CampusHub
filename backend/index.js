@@ -2,12 +2,11 @@ import express from 'express';
 import { userRouter } from './user/user.js';
 import { adminRouter } from './admin/admin.js';
 
-
 const app = express();
 
 // Middleware
-app.use(express.json()); // Parse JSON body
-app.use(express.urlencoded({ extended: true })); // Parse URL-encoded data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/v1/user', userRouter);
@@ -22,7 +21,4 @@ app.use((err, req, res, next) => {
     res.status(500).json({ success: false, message: 'Something went wrong!' });
 });
 
-const PORT = 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+export default app;

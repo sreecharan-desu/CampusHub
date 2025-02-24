@@ -1,354 +1,148 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSetRecoilState } from 'recoil';
+import { userState } from '../state/userAtom';
 import axios from 'axios';
-import { z } from 'zod';
-import BottomNavbar from '../components/BottomNavbar';
 
-const Signin = () => {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        username: '',
-        password: '',
-    });
-    const [forgotPasswordData, setForgotPasswordData] = useState({
-        college_email: '',
-        otp: ''
-    });
-    const [errors, setErrors] = useState({});
+export default function SignIn() {
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/dashboard');
+        }
+    }, []);
+
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
+    const [emailError, setEmailError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [apiError, setApiError] = useState('');
-    const [showForgotPassword, setShowForgotPassword] = useState(false);
-    const [showOTPInput, setShowOTPInput] = useState(false);
-    const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState('');
-
-    const signInSchema = z.object({
-        username: z.string().min(3, 'Username must be at least 3 characters'),
-        password: z.string().min(6, 'Password must be at least 6 characters'),
-        college_email: z.string().email('Invalid email format').optional()
-    });
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
+    const navigate = useNavigate();
+    const setUser = useSetRecoilState(userState);
+    
+    const validateEmail = (email) => {
+        const trimmedEmail = email.trim().toLowerCase();
+        const validDomain = '@rguktong.ac.in';
+        
+        if (!trimmedEmail.endsWith(validDomain)) {
+            return { valid: false, message: 'Email must end with @rguktong.ac.in' };
+        }
+        
+        const username = trimmedEmail.split('@')[0];
+        if (!username.startsWith('o')) {
+            return { valid: false, message: 'Email must start with letter "o"' };
+        }
+        
+        return { valid: true, normalizedEmail: trimmedEmail };
+    };
+    
+    const handleEmailChange = (e) => {
+        const inputEmail = e.target.value;
+        setEmail(inputEmail);
+        
+        if (inputEmail) {
+            const validation = validateEmail(inputEmail);
+            setEmailError(validation.valid ? '' : validation.message);
+        } else {
+            setEmailError('');
         }
     };
-
-    const handleForgotPasswordChange = (e) => {
-        const { name, value } = e.target;
-        setForgotPasswordData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
-    };
-
+    
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
-        setApiError('');
-
-        try {
-            const validatedData = signInSchema.parse(formData);
-            
-            const response = await axios.post('https://campus-schield-backend-api.vercel.app/api/v1/user/signin', validatedData);
-            
-            if (response.data.success) {
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                navigate('/profile');
-            } else {
-                setApiError(response.data.msg || 'Sign in failed. Please try again.');
-            }
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                const fieldErrors = {};
-                error.errors.forEach(err => {
-                    fieldErrors[err.path[0]] = err.message;
-                });
-                setErrors(fieldErrors);
-            } else {
-                setApiError(error.response?.data?.msg || 'Sign in failed. Please try again.');
-            }
-        } finally {
-            setIsLoading(false);
+        setError(null);
+        
+        const validation = validateEmail(email);
+        if (!validation.valid) {
+            setEmailError(validation.message);
+            return;
         }
-    };
-
-    const handleForgotPassword = async (e) => {
-        e.preventDefault();
+        
         setIsLoading(true);
-        setApiError('');
-        setForgotPasswordSuccess('');
-
+        
         try {
-            const response = await axios.post('https://campus-schield-backend-api.vercel.app/api/v1/user/forgotpassword', {
-                college_email: forgotPasswordData.college_email
+            // Use normalized (trimmed and lowercase) email for the API request
+            const normalizedEmail = validation.normalizedEmail;
+            
+            const response = await axios.post('https://campushub-api.vercel.app/user/signin', {
+                email: normalizedEmail,
+                password
             });
-
-            if (response.data.success) {
-                setForgotPasswordSuccess('OTP sent to your email. Please check your inbox.');
-                setShowOTPInput(true);
-            } else {
-                setApiError(response.data.msg || 'Failed to send OTP. Please try again.');
-            }
-        } catch (error) {
-            setApiError(error.response?.data?.msg || 'Failed to send OTP. Please try again.');
+            
+            const { token, user } = response.data;
+            
+            localStorage.setItem('token', token);
+            setUser(user);
+            navigate('/dashboard');
+        } catch (err) {
+            setError(err.response?.data?.msg || 'Something went wrong. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
-
-    const handleVerifyOTP = async (e) => {
-        e.preventDefault();
-        setIsLoading(true);
-        setApiError('');
-
-        try {
-            const response = await axios.post('https://campus-schield-backend-api.vercel.app/api/v1/user/verifyotp', forgotPasswordData);
-
-            if (response.data.success) {
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user', JSON.stringify(response.data.user));
-                navigate('/profile');
-            } else {
-                setApiError(response.data.msg || 'Invalid OTP. Please try again.');
-            }
-        } catch (error) {
-            setApiError(error.response?.data?.msg || 'Failed to verify OTP. Please try again.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (<>
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-            <div className="max-w-md w-full m-4 p-8 bg-white rounded-2xl shadow-2xl space-y-8 transform hover:scale-105 transition-all duration-300">
-                <div>
-                    <h2 className="text-center text-4xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                        {showForgotPassword ? 'Reset Password' : 'Welcome Back'}
-                    </h2>
-                    <p className="mt-2 text-center text-sm text-gray-600">
-                        {showForgotPassword ? 'Enter your college email to reset password' : 'Sign in to access your account'}
+    
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-purple-100">
+            <div className="bg-white p-8 rounded-xl shadow-xl w-96 border border-gray-200">
+                <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold text-gray-800">Welcome Back!</h2>
+                    <p className="text-gray-600 mt-2">Sign in to access your account</p>
+                </div>
+                
+                {error && (
+                    <div className="bg-red-50 p-3 rounded-lg mb-4 border-l-4 border-red-500">
+                        <p className="text-red-600 text-sm">{error}</p>
+                    </div>
+                )}
+                
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <label className="block text-gray-700 font-medium mb-1">Email Address</label>
+                        <input
+                            type="email"
+                            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 bg-gray-50 hover:bg-white ${emailError ? 'border-red-500' : 'border-gray-300'}`}
+                            value={email}
+                            onChange={handleEmailChange}
+                            placeholder="o123456@rguktong.ac.in"
+                            required
+                        />
+                        {emailError && (
+                            <p className="text-red-500 text-xs mt-1">{emailError}</p>
+                        )}
+                        <p className="text-gray-500 text-xs mt-1">Email must start with (o) and end with (@rguktong.ac.in) currently only for rgukt students.</p>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center mb-1">
+                            <label className="block text-gray-700 font-medium">Password</label>
+                        </div>
+                        <input
+                            type="password"
+                            className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 bg-gray-50 hover:bg-white"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-300 font-medium shadow-md disabled:bg-blue-400 disabled:cursor-not-allowed"
+                        disabled={isLoading || emailError}
+                    >
+                        {isLoading ? 'Signing in...' : 'Sign In'}
+                    </button>
+                </form>
+                
+                <div className="mt-6 text-center">
+                    <p className="text-gray-600">
+                        Dont have an account?{' '}
+                        <a href="/signup" className="text-blue-600 hover:underline font-medium">
+                            Sign up
+                        </a>
                     </p>
                 </div>
-
-                {!showForgotPassword ? (
-                    <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <label htmlFor="username" className="text-sm font-medium text-gray-700 mb-1 block">
-                                    Username
-                                </label>
-                                <input
-                                    id="username"
-                                    name="username"
-                                    type="text"
-                                    required
-                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
-                                    placeholder="Enter your username"
-                                    value={formData.username}
-                                    onChange={handleChange}
-                                />
-                                {errors.username && (
-                                    <p className="text-red-500 text-xs mt-1 animate-pulse">{errors.username}</p>
-                                )}
-                            </div>
-
-                            <div className="relative">
-                                <label htmlFor="password" className="text-sm font-medium text-gray-700 mb-1 block">
-                                    Password
-                                </label>
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
-                                    placeholder="Enter your password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                />
-                                {errors.password && (
-                                    <p className="text-red-500 text-xs mt-1 animate-pulse">{errors.password}</p>
-                                )}
-                            </div>
-
-                            {/* <div className="relative">
-                                <label htmlFor="college_email" className="text-sm font-medium text-gray-700 mb-1 block">
-                                    College Email
-                                </label>
-                                <input
-                                    id="college_email"
-                                    name="college_email"
-                                    type="email"
-                                    required
-                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
-                                    placeholder="Enter your college email"
-                                    value={formData.college_email}
-                                    onChange={handleChange}
-                                />
-                                {errors.college_email && (
-                                    <p className="text-red-500 text-xs mt-1 animate-pulse">{errors.college_email}</p>
-                                )}
-                            </div> */}
-                        </div>
-
-                        {apiError && (
-                            <div className="text-red-500 text-sm text-center p-3 bg-red-50 rounded-lg animate-bounce">
-                                {apiError}
-                            </div>
-                        )}
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition-all duration-200 hover:scale-105 disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    <span className="flex items-center">
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Signing in...
-                                    </span>
-                                ) : (
-                                    'Sign in'
-                                )}
-                            </button>
-                        </div>
-
-                        <div className="text-center text-sm text-gray-600">
-                            <button 
-                                type="button"
-                                onClick={() => setShowForgotPassword(true)}
-                                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-                            >
-                                Forgot your password?
-                            </button>
-                        </div>
-
-                        <div className="text-center text-sm">
-                            <p className="text-gray-600">
-                                Don&apos;t have an account?{' '}
-                                <button 
-                                    type="button"
-                                    onClick={() => navigate('/signup')} 
-                                    className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-                                >
-                                    Sign up now
-                                </button>
-                            </p>
-                        </div>
-                    </form>
-                ) : (
-                    <form className="mt-8 space-y-6" onSubmit={showOTPInput ? handleVerifyOTP : handleForgotPassword}>
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <label htmlFor="forgot_college_email" className="text-sm font-medium text-gray-700 mb-1 block">
-                                    Your Email
-                                </label>
-                                <input
-                                    id="forgot_college_email"
-                                    name="college_email"
-                                    type="email"
-                                    required
-                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
-                                    placeholder="Enter your college email"
-                                    value={forgotPasswordData.college_email}
-                                    onChange={handleForgotPasswordChange}
-                                    disabled={showOTPInput}
-                                />
-                            </div>
-
-                            {showOTPInput && (
-                                <div className="relative">
-                                    <label htmlFor="otp" className="text-sm font-medium text-gray-700 mb-1 block">
-                                        OTP
-                                    </label>
-                                    <input
-                                        id="otp"
-                                        name="otp"
-                                        type="text"
-                                        required
-                                        maxLength="6"
-                                        className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white"
-                                        placeholder="Enter 6-digit OTP"
-                                        value={forgotPasswordData.otp}
-                                        onChange={handleForgotPasswordChange}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {apiError && (
-                            <div className="text-red-500 text-sm text-center p-3 bg-red-50 rounded-lg animate-bounce">
-                                {apiError}
-                            </div>
-                        )}
-
-                        {forgotPasswordSuccess && (
-                            <div className="text-green-500 text-sm text-center p-3 bg-green-50 rounded-lg">
-                                {forgotPasswordSuccess}
-                            </div>
-                        )}
-
-                        <div>
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform transition-all duration-200 hover:scale-105 disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    <span className="flex items-center">
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        {showOTPInput ? 'Verifying OTP...' : 'Sending OTP...'}
-                                    </span>
-                                ) : (
-                                    showOTPInput ? 'Verify OTP' : 'Send OTP'
-                                )}
-                            </button>
-                        </div>
-
-                        <div className="text-center text-sm">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setShowForgotPassword(false);
-                                    setShowOTPInput(false);
-                                    setForgotPasswordData({ college_email: '', otp: '' });
-                                    setApiError('');
-                                    setForgotPasswordSuccess('');
-                                }}
-                                className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200"
-                            >
-                                Back to Sign In
-                            </button>
-                        </div>
-                    </form>
-                )}
             </div>
         </div>
-
-        <BottomNavbar/>
-    </>);
-};
-
-export default Signin;
+    );
+}

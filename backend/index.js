@@ -198,7 +198,6 @@ const userRoutes = {
         }
         res.json({ success: true, user });
     },
-
     async registerForEvent(req, res) {
         const event = await Event.findById(req.params.id);
         if (!event) {
@@ -215,6 +214,7 @@ const userRoutes = {
         }
 
         await Registration.create({ user: req.user.id, event: event._id });
+        await event.updateOne({ $push: { attendees: req.user.id } });
         await emailConfig.sendEventRegistrationEmail(event, req.user);
 
         res.json({ success: true, msg: 'Registered successfully!' });
@@ -396,7 +396,16 @@ app.post('/admin/signup', adminRoutes.signup);
 app.post('/admin/signin', adminRoutes.signin);
 app.get('/admin/profile', authenticateToken, adminRoutes.getProfile);
 app.get('/admin/events', authenticateToken, isAdmin, async (req, res) => {
-    const events = await Event.find().populate('organizer', 'adminName email');
+    const events = await Event.find();
+    const registrations = await Registration.find();
+
+    registrations.map(registration => {
+        const event = events.find(event => event._id.toString() === registration.event.toString());
+        if (event) {
+            event.attendees.push(registration.user);
+        }
+    }
+    )
     res.json({ success: true, events });
 });
 app.post('/admin/create-event', authenticateToken, isAdmin, adminRoutes.createEvent);

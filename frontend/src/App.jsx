@@ -1,131 +1,42 @@
-import { AnimatePresence,motion } from 'framer-motion';
-import Signin from './pages/Signin';
-import Signup from './pages/Signup';
-import HomePage from './pages/Homepage';
-import Profile from './pages/Profile';
-import Report from './pages/Report';
-import Support from './pages/Support';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import AdminDashboard from './pages/Admin';
-import AdminSignIn from './pages/AdminSIgnin';
-import DocsWebsite from './pages/Docs';
-import { RecoilRoot } from 'recoil';
+import React, { Suspense } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { RecoilRoot } from "recoil";
+import './index.css'
+import SignIn from "./pages/Signin";
+const LandingPage = React.lazy(() => import("./pages/LandingPage"));
+const Dashboard = React.lazy(() => import("./pages/dashboard"));
 
 function App() {
     return (
         <RecoilRoot>
-        <BrowserRouter>
-            <AnimatePresence mode="wait">
+            <BrowserRouter>
                 <Routes>
                     <Route path="/" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <HomePage />
-                        </motion.div>
+                        <Suspense fallback={<LoadingAnimation />}>
+                            <LandingPage />
+                        </Suspense>
                     } />
                     <Route path="/signin" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Signin />
-                        </motion.div>
+                        <Suspense fallback={<LoadingAnimation />}>
+                            <SignIn />
+                        </Suspense>
                     } />
-                                        <Route path="/signup" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Signup />
-                        </motion.div>
-                    } />
-                                        <Route path="/create-report" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Report />
-                        </motion.div>
-                    } />
-                                                            <Route path="/profile" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Profile />
-                        </motion.div>
-                    } />
-                                                            <Route path="/support" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <Support />
-                        </motion.div>
-                    } />
-                     <Route path="/admin/signin" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <AdminSignIn />
-                        </motion.div>
-                    } />
-                                         <Route path="/admin/dashboard" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <AdminDashboard />
-                        </motion.div>
-                    } />
-
-
-<Route path="/docs" element={
-                        <motion.div
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <DocsWebsite/>
-                        </motion.div>
-                    } />
+                    <Route path="/dashboard" element={<Dashboard/>} />
                 </Routes>
-            </AnimatePresence>
-        </BrowserRouter>
+            </BrowserRouter>
         </RecoilRoot>
     );
 }
 
-// Create a PageWrapper component for reuse
-const PageWrapper = ({ children }) => (
-    <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -20 }}
-        transition={{ duration: 0.5 }}
-    >
-        {children}
-    </motion.div>
-);
+
+function LoadingAnimation() {
+    return (
+        <div className="flex justify-center items-center h-screen">
+            <div className="relative w-16 h-16">
+                <div className="w-full h-full border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+        </div>
+    );
+}
 
 export default App;

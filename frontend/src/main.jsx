@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createRoot } from 'react-dom/client';
 import { RecoilRoot } from 'recoil';
 import { useState, useEffect } from 'react';
@@ -33,7 +34,7 @@ const LoadingScreen = () => (
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.5, duration: 1, ease: "easeOut" }}
     >
-      Campus Shield
+      CampusHuB
     </motion.h1>
     <motion.p
       className="text-sm mt-2"
@@ -41,7 +42,7 @@ const LoadingScreen = () => (
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 1, duration: 1, ease: "easeOut" }}
     >
-      Your OneStop Security solution.
+      Your OneStop even management 
     </motion.p>
   </motion.div>
 );

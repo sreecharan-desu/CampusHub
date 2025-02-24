@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*{
+  font-family: "Courier Prime", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 
+           shadow-xl hover:shadow-orange/20 transition-all duration-300;
+  }
+  
+  .animate-gradient {
+    animation: gradient 8s linear infinite;
+  }
+  
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+  
+  .transform-gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+html {
+  scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: white;
+  color: rgb(31, 41, 55);
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float-delayed {
+  animation: float-delayed 6s ease-in-out infinite 3s;
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+
+
+/* Webkit browsers (Chrome, Safari, newer versions of Edge) */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ff6b2b;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff5a1f;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #ff6b2b #f1f1f1;
+} 
+
+@layer utilities {
+  .responsive-container {
+    @apply w-[95%] sm:w-[90%] md:w-[85%] lg:w-[80%] xl:w-[75%] mx-auto;
+  }
+  
+  .responsive-padding {
+    @apply px-4 sm:px-6 md:px-8 lg:px-12;
+  }
+  
+  .responsive-text {
+    @apply text-base sm:text-lg md:text-xl;
+  }
+}
+
+/* Ensure container doesn't cause horizontal scroll */
+#root {
+  width: 100%;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Add padding compensation for scrollbar */
+.container {
+  padding-right: calc(100vw - 100%);
+}
+
+
+@layer utilities {
+  .xs\:flex-row {
+    flex-direction: row;
+  }
+  
+  .xs\:w-auto {
+    width: auto;
+  }
+  
+  @media (max-width: 400px) {
+    .max-xs\:hidden {
+      display: none;
+    }
+  }
+}

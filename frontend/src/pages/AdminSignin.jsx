@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { useSetRecoilState } from "recoil";
+import { adminState } from "../state/adminAtom";
 
 export default function AdminSignin() {
     const navigate = useNavigate();
@@ -12,6 +14,7 @@ export default function AdminSignin() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [serverError, setServerError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
+    const setAdmin = useSetRecoilState(adminState);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -70,7 +73,7 @@ export default function AdminSignin() {
                 localStorage.setItem("adminToken", response.data.token);
                 
                 // Store admin data
-                localStorage.setItem("admin", JSON.stringify(response.data.admin));
+                setAdmin(response.data.admin);
                 
                 // Redirect to admin dashboard
                 navigate("/admin/dashboard");

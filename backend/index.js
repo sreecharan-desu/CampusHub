@@ -381,16 +381,6 @@ const adminRoutes = {
 // Routes
 app.get('/', (req, res) => res.send("Hello from backend"));
 
-// User routes
-app.post('/user/signup', userRoutes.signup);
-app.post('/user/signin', userRoutes.signin);
-app.get('/user/profile', authenticateToken, userRoutes.getProfile);
-app.get('/user/events', async (req, res) => {
-    const events = await Event.find();
-    res.json({ success: true, events });
-});
-app.post('/user/register-event/:id', authenticateToken, userRoutes.registerForEvent);
-
 // Admin routes
 app.post('/admin/signup', adminRoutes.signup);
 app.post('/admin/signin', adminRoutes.signin);
@@ -412,6 +402,19 @@ app.post('/admin/create-event', authenticateToken, isAdmin, adminRoutes.createEv
 app.put('/admin/edit-event/:id', authenticateToken, isAdmin, adminRoutes.updateEvent);
 app.delete('/admin/delete-event/:eventId', authenticateToken, isAdmin, adminRoutes.deleteEvent);
 app.get('/admin/event/:eventId/registrations', authenticateToken, isAdmin, adminRoutes.getEventRegistrations);
+
+
+// User routes
+app.post('/user/signup', userRoutes.signup);
+app.post('/user/signin', userRoutes.signin);
+app.get('/user/profile', authenticateToken, userRoutes.getProfile);
+app.get('/user/events', async (req, res) => {
+    const events = await Event.find();
+    res.json({ success: true, events });
+});
+app.post('/user/register-event/:id', authenticateToken, userRoutes.registerForEvent);
+
+
 
 // Error handling
 app.use(errorHandler);

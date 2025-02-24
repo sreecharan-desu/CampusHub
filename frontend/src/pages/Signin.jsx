@@ -20,27 +20,27 @@ export default function SignIn() {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const setUser = useSetRecoilState(userState);
-    
+
     const validateEmail = (email) => {
         const trimmedEmail = email.trim().toLowerCase();
         const validDomain = '@rguktong.ac.in';
-        
+
         if (!trimmedEmail.endsWith(validDomain)) {
             return { valid: false, message: 'Email must end with @rguktong.ac.in' };
         }
-        
+
         const username = trimmedEmail.split('@')[0];
         if (!username.startsWith('o')) {
             return { valid: false, message: 'Email must start with letter "o"' };
         }
-        
+
         return { valid: true, normalizedEmail: trimmedEmail };
     };
-    
+
     const handleEmailChange = (e) => {
         const inputEmail = e.target.value;
         setEmail(inputEmail);
-        
+
         if (inputEmail) {
             const validation = validateEmail(inputEmail);
             setEmailError(validation.valid ? '' : validation.message);
@@ -48,30 +48,30 @@ export default function SignIn() {
             setEmailError('');
         }
     };
-    
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
-        
+
         const validation = validateEmail(email);
         if (!validation.valid) {
             setEmailError(validation.message);
             return;
         }
-        
+
         setIsLoading(true);
-        
+
         try {
             // Use normalized (trimmed and lowercase) email for the API request
             const normalizedEmail = validation.normalizedEmail;
-            
+
             const response = await axios.post('https://campushub-api.vercel.app/user/signin', {
                 email: normalizedEmail,
                 password
             });
-            
+
             const { token, user } = response.data;
-            
+
             localStorage.setItem('token', token);
             setUser(user);
             navigate('/dashboard');
@@ -81,7 +81,7 @@ export default function SignIn() {
             setIsLoading(false);
         }
     };
-    
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-100 to-purple-100">
             <div className="bg-white p-8 rounded-xl shadow-xl w-96 border border-gray-200">
@@ -89,13 +89,13 @@ export default function SignIn() {
                     <h2 className="text-3xl font-bold text-gray-800">Welcome Back!</h2>
                     <p className="text-gray-600 mt-2">Sign in to access your account</p>
                 </div>
-                
+
                 {error && (
                     <div className="bg-red-50 p-3 rounded-lg mb-4 border-l-4 border-red-500">
                         <p className="text-red-600 text-sm">{error}</p>
                     </div>
                 )}
-                
+
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-gray-700 font-medium mb-1">Email Address</label>
@@ -133,7 +133,7 @@ export default function SignIn() {
                         {isLoading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
-                
+
                 <div className="mt-6 text-center">
                     <p className="text-gray-600">
                         Dont have an account?{' '}
@@ -141,6 +141,19 @@ export default function SignIn() {
                             Sign up
                         </a>
                     </p>
+                </div>
+
+                <div className="mt-6">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500">
+                                Go back to <b onClick={() => navigate('/')} className="text-blue-500 cursor-pointer">Home</b>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

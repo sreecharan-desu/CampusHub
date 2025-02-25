@@ -56,7 +56,7 @@ export default function Dashboard() {
     }, [navigate]);
 
     const images_urls = [
-        "./bg1.svg", "./bg2.svg", "./bg3.svg","./bg4.svg","./bg5.svg","./bg6.svg","./bg7.svg"
+        "./bg1.svg", "./bg2.svg", "./bg3.svg", "./bg4.svg", "./bg5.svg", "./bg6.svg", "./bg7.svg"
     ]
 
     const getRandomeimageIndexes = () => {
@@ -260,7 +260,7 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 ">
             {/* Notification */}
             {notification.show && (
                 <div className={`fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg ${notification.type === "success"
@@ -435,6 +435,7 @@ export default function Dashboard() {
                     </div>
                 </div>
             </main>
+
         </div>
     );
 }

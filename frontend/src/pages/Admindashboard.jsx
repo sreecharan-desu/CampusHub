@@ -42,11 +42,11 @@ export default function AdminDashboard() {
     }, [admin]);
 
 
-    useEffect(()=>{
-        if(!localStorage.getItem("token")){
+    useEffect(() => {
+        if (!localStorage.getItem("token")) {
             navigate('/')
         }
-    },[])
+    }, [])
     // Fetch initial data
     useEffect(() => {
         fetchProfile();
@@ -358,7 +358,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center space-x-4">
-                     
+
 
                         <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
@@ -530,8 +530,6 @@ export default function AdminDashboard() {
                                                         <th className="pb-3 pl-4">Event Name</th>
                                                         <th className="pb-3">Date</th>
                                                         <th className="pb-3">Location</th>
-                                                        <th className="pb-3">Capacity</th>
-                                                        <th className="pb-3">Attendees</th>
                                                         <th className="pb-3">Actions</th>
                                                     </tr>
                                                 </thead>
@@ -620,29 +618,7 @@ export default function AdminDashboard() {
                                                     required
                                                 />
                                             </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-                                                <input
-                                                    type="number"
-                                                    value={eventForm.capacity}
-                                                    onChange={(e) => setEventForm({ ...eventForm, capacity: parseInt(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                                    required
-                                                    min="1"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                                <input
-                                                    type="number"
-                                                    value={eventForm.price}
-                                                    onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                                    required
-                                                    min="0"
-                                                    step="0.01"
-                                                />
-                                            </div>
+
                                         </div>
                                         <div className="mt-4">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>

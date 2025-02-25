@@ -1,16 +1,22 @@
+/* eslint-disable react/prop-types */
 import { useState, useEffect } from 'react';
 import { useRecoilState } from 'recoil';
 import { adminState } from "../state/adminAtom";
-import { Bell, Calendar, ChevronDown, LogOut, Menu, PieChart, Settings, Users, Plus, Edit, Trash2, Eye } from 'lucide-react';
-import axios from 'axios'; // Assuming axios is installed
+import {
+    Calendar, ChevronLeft, LogOut, Menu,
+    PieChart, Users, Plus, Edit,
+    Trash2, Eye, AlertTriangle,
+    Download
+} from 'lucide-react';
+import axios from 'axios';
 
-export default function AdminDashboard(){
+export default function AdminDashboard() {
     const [admin, setAdmin] = useRecoilState(adminState);
     const [events, setEvents] = useState([]);
     const [registrations, setRegistrations] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [collapsed, setCollapsed] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [activeTab, setActiveTab] = useState('dashboard');
     const [notifications, setNotifications] = useState([]);
     const [isCreatingEvent, setIsCreatingEvent] = useState(false);
@@ -26,45 +32,47 @@ export default function AdminDashboard(){
     });
     const [error, setError] = useState('');
 
-    // Setup axios defaults
+    // Configure axios with auth token
     useEffect(() => {
-        if (admin?.token) {
-            axios.defaults.headers.common['Authorization'] = `Bearer ${admin.token}`;
+        if (localStorage.getItem("token")) {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem("token")}`;
         }
     }, [admin]);
 
-    // Fetch events data
+    // Fetch initial data
+    useEffect(() => {
+        fetchProfile();
+        fetchEvents();
+    }, []);
+
+    // API Functions
+    const fetchProfile = async () => {
+        try {
+            const response = await axios.get('https://campushub-api.vercel.app/admin/profile');
+            if (response.data.success) {
+                setAdmin(prevState => ({ ...prevState, ...response.data.admin }));
+            }
+        } catch (error) {
+            console.log(error);
+            handleError('Failed to load profile');
+        }
+    };
+
     const fetchEvents = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`https://campushub-api.vercel.app/admin/events`);
+            const response = await axios.get('https://campushub-api.vercel.app/admin/events');
             if (response.data.success) {
                 setEvents(response.data.events);
             }
         } catch (error) {
-            setError('Failed to fetch events');
-            console.error('Error fetching events:', error);
+            console.log(error);
+            handleError('Failed to load events');
         } finally {
             setLoading(false);
         }
     };
 
-    // Fetch admin profile
-    const fetchProfile = async () => {
-        try {
-            const response = await axios.get('https://campushub-api.vercel.app/admin/profile');
-            if (response.data.success) {
-                setAdmin(prevState => ({
-                    ...prevState,
-                    ...response.data.admin
-                }));
-            }
-        } catch (error) {
-            console.error('Error fetching profile:', error);
-        }
-    };
-
-    // Fetch event registrations
     const fetchEventRegistrations = async (eventId) => {
         try {
             const response = await axios.get(`https://campushub-api.vercel.app/admin/event/${eventId}/registrations`);
@@ -74,26 +82,11 @@ export default function AdminDashboard(){
                 setActiveTab('registrations');
             }
         } catch (error) {
-            setError('Failed to fetch registrations');
-            console.error('Error fetching registrations:', error);
+            console.log(error);
+            handleError('Failed to load registrations');
         }
     };
 
-    // Initial data fetch
-    useEffect(() => {
-        fetchProfile();
-        fetchEvents();
-    }, []);
-
-    // Handle logout
-    const handleLogout = () => {
-        setAdmin(null);
-        // Clear token
-        axios.defaults.headers.common['Authorization'] = '';
-        // In a real app, you would redirect to login
-    };
-
-    // Handle event creation
     const handleCreateEvent = async (e) => {
         e.preventDefault();
         try {
@@ -101,71 +94,72 @@ export default function AdminDashboard(){
             if (response.data.success) {
                 setEvents([...events, response.data.event]);
                 setIsCreatingEvent(false);
-                setEventForm({
-                    title: '',
-                    description: '',
-                    date: '',
-                    time: '',
-                    location: '',
-                    capacity: 0,
-                    price: 0
-                });
-                // Add notification
-                setNotifications([
-                    { id: Date.now(), text: `Event "${response.data.event.title}" created successfully`, time: 'Just now' },
-                    ...notifications
-                ]);
+                resetEventForm();
+                addNotification(`Event "${response.data.event.title}" created successfully`);
             }
         } catch (error) {
-            setError('Failed to create event');
-            console.error('Error creating event:', error);
+            console.log(error);
+            handleError('Failed to create event');
         }
     };
 
-    // Handle event update
     const handleUpdateEvent = async (e) => {
         e.preventDefault();
         try {
             const response = await axios.put(`https://campushub-api.vercel.app/admin/edit-event/${selectedEvent._id}`, eventForm);
             if (response.data.success) {
-                setEvents(events.map(event =>
-                    event._id === selectedEvent._id ? response.data.event : event
-                ));
+                setEvents(events.map(event => event._id === selectedEvent._id ? response.data.event : event));
                 setIsEditingEvent(false);
                 setSelectedEvent(null);
-                // Add notification
-                setNotifications([
-                    { id: Date.now(), text: `Event "${response.data.event.title}" updated successfully`, time: 'Just now' },
-                    ...notifications
-                ]);
+                addNotification(`Event "${response.data.event.title}" updated successfully`);
             }
         } catch (error) {
-            setError('Failed to update event');
-            console.error('Error updating event:', error);
+            console.log(error);
+            handleError('Failed to update event');
         }
     };
 
-    // Handle event deletion
     const handleDeleteEvent = async (eventId) => {
-        if (!window.confirm('Are you sure you want to delete this event?')) return;
+        if (!confirm('Are you sure you want to delete this event?')) return;
 
         try {
             const response = await axios.delete(`https://campushub-api.vercel.app/admin/delete-event/${eventId}`);
             if (response.data.success) {
                 setEvents(events.filter(event => event._id !== eventId));
-                // Add notification
-                setNotifications([
-                    { id: Date.now(), text: 'Event deleted successfully', time: 'Just now' },
-                    ...notifications
-                ]);
+                addNotification('Event deleted successfully');
             }
         } catch (error) {
-            setError('Failed to delete event');
-            console.error('Error deleting event:', error);
+            console.log(error);
+            handleError('Failed to delete event');
         }
     };
 
-    // Edit event
+    // Helper Functions
+    const addNotification = (text) => {
+        setNotifications([
+            { id: Date.now(), text, time: 'Just now' },
+            ...notifications
+        ]);
+    };
+
+    const handleError = (message) => {
+        setError(message);
+        console.error(message);
+        setTimeout(() => setError(''), 5000); // Auto-dismiss after 5 seconds
+    };
+
+    const resetEventForm = () => {
+        setEventForm({
+            title: '',
+            description: '',
+            date: '',
+            time: '',
+            location: '',
+            capacity: 0,
+            price: 0
+        });
+    };
+
     const startEditEvent = (event) => {
         setSelectedEvent(event);
         setEventForm({
@@ -174,61 +168,161 @@ export default function AdminDashboard(){
             date: event.date.split('T')[0],
             time: event.time || '',
             location: event.location,
-            capacity: event.capacity,
-            price: event.price
+            capacity: event.attendees?.length || 0, // Use attendees length as capacity
+            price: event.price || 0
         });
         setIsEditingEvent(true);
     };
 
-    // Format date
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'short', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString(undefined, options);
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
+
+    const exportToCSV = () => {
+        if (events.length === 0) {
+            alert("No events to export!");
+            return;
+        }
+
+        const csvHeaders = ["Event Name,Description,Date,Attendees"];
+        const csvRows = events.map(event =>
+            `"${event.title}","${event.description}","${formatDate(event.date)}","${event.attendees?.length || 0}"`
+        );
+
+        const csvContent = [csvHeaders, ...csvRows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "events.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+
+    const handleLogout = () => {
+        setAdmin(null);
+        axios.defaults.headers.common['Authorization'] = '';
+        // Redirect to login would happen here in a real app
+    };
+
+    // UI Components
+    const SidebarLink = ({ icon, label, tabName }) => (
+        <div
+            className={`flex items-center px-4 py-3 rounded-lg transition-colors ${activeTab === tabName ? 'bg-blue-100 text-blue-600' : 'text-gray-600 hover:bg-gray-100'} cursor-pointer`}
+            onClick={() => {
+                setActiveTab(tabName);
+                if (tabName === 'events') {
+                    setSelectedEvent(null);
+                    setIsCreatingEvent(false);
+                    setIsEditingEvent(false);
+                }
+            }}
+        >
+            {icon}
+            {!sidebarCollapsed && <span className="ml-3">{label}</span>}
+        </div>
+    );
+
+    const StatCard = ({ label, value, icon, color }) => (
+        <div className="bg-white rounded-lg shadow-sm p-6 transition-all hover:shadow-md">
+            <div className="flex justify-between items-center">
+                <div>
+                    <p className="text-gray-500 text-sm">{label}</p>
+                    <h3 className="text-3xl font-bold mt-1">{value}</h3>
+                </div>
+                <div className={`p-3 ${color} rounded-full`}>
+                    {icon}
+                </div>
+            </div>
+        </div>
+    );
+
+    const EventRow = ({ event, actions }) => (
+        <tr className="border-b last:border-0 hover:bg-gray-50 transition-colors">
+            <td className="py-4 pl-4 font-medium">{event.title}</td>
+            <td className="py-4">{formatDate(event.date)}</td>
+            <td className="py-4">{event.location}</td>
+            <td className="py-4">{event.attendees?.length || 0}</td>
+            <td className="py-4">{event.attendees?.length || 0}</td>
+            <td className="py-4 space-x-2 flex">
+                {actions}
+            </td>
+        </tr>
+    );
+
+    const exportRegistrationsToCSV = () => {
+        if (registrations.length === 0) {
+            alert("No registrations to export!");
+            return;
+        }
+
+        const csvHeaders = ["Name,Email,Registered Date"];
+        const csvRows = registrations.map(reg =>
+            `"${reg.user?.email.split("@")[0] || 'N/A'}","${reg.user?.email || 'N/A'}","${formatDate(reg.createdAt)}"`
+        );
+
+        const csvContent = [csvHeaders, ...csvRows].join("\n");
+        const blob = new Blob([csvContent], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `registrations_${selectedEvent.title.replace(/\s+/g, "_")}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+
+    const ActionButton = ({ onClick, icon, color, title }) => (
+        <button
+            onClick={onClick}
+            className={`p-1.5 ${color} rounded-full hover:bg-opacity-20 transition-colors`}
+            title={title}
+        >
+            {icon}
+        </button>
+    );
 
     return (
         <div className="flex h-screen bg-gray-50">
             {/* Sidebar */}
-            <div className={`bg-white shadow-lg transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}>
+            <div className={`bg-white shadow-md transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-20' : 'w-64'}`}>
                 <div className="p-4 flex justify-between items-center border-b">
-                    {!collapsed && <h2 className="text-xl font-bold text-blue-600">EventAdmin</h2>}
+                    {!sidebarCollapsed && <h2 className="text-xl font-bold text-blue-600">CampusHub</h2>}
                     <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        className="p-2 rounded-lg hover:bg-gray-100"
+                        onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                         <Menu size={20} />
                     </button>
                 </div>
-                <div className="py-4">
-                    <div
-                        className={`flex items-center px-4 py-3 ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-gray-600'} hover:bg-blue-50 hover:text-blue-600 cursor-pointer`}
-                        onClick={() => setActiveTab('dashboard')}
-                    >
-                        <PieChart size={20} />
-                        {!collapsed && <span className="ml-3">Dashboard</span>}
-                    </div>
-                    <div
-                        className={`flex items-center px-4 py-3 ${activeTab === 'events' ? 'bg-blue-50 text-blue-600' : 'text-gray-600'} hover:bg-blue-50 hover:text-blue-600 cursor-pointer`}
-                        onClick={() => { setActiveTab('events'); setSelectedEvent(null); }}
-                    >
-                        <Calendar size={20} />
-                        {!collapsed && <span className="ml-3">Events</span>}
-                    </div>
-                    <div
-                        className={`flex items-center px-4 py-3 ${activeTab === 'settings' ? 'bg-blue-50 text-blue-600' : 'text-gray-600'} hover:bg-blue-50 hover:text-blue-600 cursor-pointer`}
-                        onClick={() => setActiveTab('settings')}
-                    >
-                        <Settings size={20} />
-                        {!collapsed && <span className="ml-3">Settings</span>}
-                    </div>
+
+                <div className="py-4 px-3 space-y-1 flex-1">
+                    <SidebarLink
+                        icon={<PieChart size={20} />}
+                        label="Dashboard"
+                        tabName="dashboard"
+                    />
+                    <SidebarLink
+                        icon={<Calendar size={20} />}
+                        label="Events"
+                        tabName="events"
+                    />
                 </div>
-                <div className="absolute bottom-0 w-full border-t">
+
+                <div className="border-t p-3">
                     <div
-                        className="flex items-center px-4 py-3 text-red-500 hover:bg-red-50 cursor-pointer"
+                        className="flex items-center px-4 py-3 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
                         onClick={handleLogout}
                     >
                         <LogOut size={20} />
-                        {!collapsed && <span className="ml-3">Logout</span>}
+                        {!sidebarCollapsed && <span className="ml-3">Logout</span>}
                     </div>
                 </div>
             </div>
@@ -237,32 +331,33 @@ export default function AdminDashboard(){
             <div className="flex-1 overflow-auto">
                 {/* Header */}
                 <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center sticky top-0 z-10">
-                    <h1 className="text-2xl font-semibold text-gray-800">
-                        {activeTab === 'dashboard' && 'Dashboard'}
-                        {activeTab === 'events' && (isCreatingEvent ? 'Create Event' : isEditingEvent ? 'Edit Event' : 'Events')}
-                        {activeTab === 'registrations' && `Registrations for ${selectedEvent?.title}`}
-                        {activeTab === 'settings' && 'Settings'}
-                    </h1>
-                    <div className="flex items-center space-x-4">
-                        <div className="relative">
-                            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100">
-                                <Bell size={20} />
-                                {notifications.length > 0 && (
-                                    <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                                        {notifications.length}
-                                    </span>
-                                )}
+                    <div className="flex items-center">
+                        {activeTab === 'registrations' && (
+                            <button
+                                onClick={() => setActiveTab('events')}
+                                className="mr-3 text-gray-500 hover:text-gray-700 p-1"
+                            >
+                                <ChevronLeft size={20} />
                             </button>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                                {admin?.adminName?.charAt(0).toUpperCase() || 'A'}
+                        )}
+                        <h1 className="text-xl font-semibold text-gray-800">
+                            {activeTab === 'dashboard' && 'Dashboard'}
+                            {activeTab === 'events' && (isCreatingEvent ? 'Create Event' : isEditingEvent ? 'Edit Event' : 'Events')}
+                            {activeTab === 'registrations' && `Registrations - ${selectedEvent?.title}`}
+                        </h1>
+                    </div>
+
+                    <div className="flex items-center space-x-4">
+                     
+
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold">
+                                {admin?.username?.charAt(0).toUpperCase() || 'A'}
                             </div>
-                            {!collapsed && (
-                                <>
-                                    <span className="text-gray-700 font-medium">{admin?.adminName || 'Admin User'}</span>
-                                    <ChevronDown size={16} className="text-gray-500" />
-                                </>
+                            {!sidebarCollapsed && (
+                                <span className="text-gray-700 font-medium">
+                                    {admin?.username || admin?.email?.split('@')[0] || 'Admin'}
+                                </span>
                             )}
                         </div>
                     </div>
@@ -270,18 +365,16 @@ export default function AdminDashboard(){
 
                 {/* Error message */}
                 {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mx-6 mt-4 relative">
-                        <span className="block sm:inline">{error}</span>
-                        <span className="absolute top-0 bottom-0 right-0 px-4 py-3" onClick={() => setError('')}>
-                            <svg className="fill-current h-6 w-6 text-red-500" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <title>Close</title>
-                                <path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z" />
-                            </svg>
-                        </span>
+                    <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 m-6 rounded flex items-start">
+                        <AlertTriangle size={20} className="mr-2 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">{error}</div>
+                        <button className="text-red-500 hover:text-red-700" onClick={() => setError('')}>
+                            &times;
+                        </button>
                     </div>
                 )}
 
-                {/* Dashboard content */}
+                {/* Main content area */}
                 <main className="p-6">
                     {loading ? (
                         <div className="flex justify-center items-center h-64">
@@ -289,195 +382,193 @@ export default function AdminDashboard(){
                         </div>
                     ) : (
                         <>
-                            {/* Dashboard */}
+                            {/* Dashboard Content */}
                             {activeTab === 'dashboard' && (
                                 <>
                                     {/* Stats */}
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                        <div className="bg-white rounded-lg shadow p-6">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-gray-500 text-sm">Total Events</p>
-                                                    <h3 className="text-3xl font-bold">{events.length}</h3>
-                                                </div>
-                                                <div className="p-3 bg-blue-100 rounded-full">
-                                                    <Calendar size={24} className="text-blue-600" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white rounded-lg shadow p-6">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-gray-500 text-sm">Total Attendees</p>
-                                                    <h3 className="text-3xl font-bold">
-                                                        {events.reduce((sum, event) => sum + (event.attendees?.length || 0), 0)}
-                                                    </h3>
-                                                </div>
-                                                <div className="p-3 bg-green-100 rounded-full">
-                                                    <Users size={24} className="text-green-600" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-white rounded-lg shadow p-6">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-gray-500 text-sm">Upcoming Events</p>
-                                                    <h3 className="text-3xl font-bold">
-                                                        {events.filter(event => new Date(event.date) > new Date()).length}
-                                                    </h3>
-                                                </div>
-                                                <div className="p-3 bg-purple-100 rounded-full">
-                                                    <PieChart size={24} className="text-purple-600" />
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <StatCard
+                                            label="Total Events"
+                                            value={events.length}
+                                            icon={<Calendar size={24} className="text-blue-600" />}
+                                            color="bg-blue-100"
+                                        />
+                                        <StatCard
+                                            label="Total Attendees"
+                                            value={events.reduce((sum, event) => sum + (event.attendees?.length || 0), 0)}
+                                            icon={<Users size={24} className="text-green-600" />}
+                                            color="bg-green-100"
+                                        />
+                                        <StatCard
+                                            label="Upcoming Events"
+                                            value={events.filter(event => new Date(event.date) > new Date()).length}
+                                            icon={<PieChart size={24} className="text-purple-600" />}
+                                            color="bg-purple-100"
+                                        />
                                     </div>
-
-                                    {/* Recent events */}
-                                    <div className="bg-white rounded-lg shadow mb-6">
-                                        <div className="p-6 border-b flex justify-between items-center">
-                                            <h2 className="text-lg font-semibold">Recent Events</h2>
-                                            <button
-                                                onClick={() => setActiveTab('events')}
-                                                className="text-blue-500 text-sm"
-                                            >
-                                                View All
-                                            </button>
-                                        </div>
-                                        <div className="p-6">
-                                            <table className="w-full">
-                                                <thead>
-                                                    <tr className="text-left text-gray-500 border-b">
-                                                        <th className="pb-3">Event Name</th>
-                                                        <th className="pb-3">Date</th>
-                                                        <th className="pb-3">Attendees</th>
-                                                        <th className="pb-3">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {events.slice(0, 5).map(event => (
-                                                        <tr key={event._id} className="border-b last:border-0">
-                                                            <td className="py-4 font-medium">{event.title}</td>
-                                                            <td className="py-4">{formatDate(event.date)}</td>
-                                                            <td className="py-4">{event.attendees?.length || 0}</td>
-                                                            <td className="py-4">
-                                                                <button
-                                                                    onClick={() => fetchEventRegistrations(event._id)}
-                                                                    className="mr-2 text-blue-500"
-                                                                >
-                                                                    <Eye size={18} />
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                    {events.length === 0 && (
-                                                        <tr>
-                                                            <td colSpan="4" className="py-4 text-center text-gray-500">
-                                                                No events found
-                                                            </td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-
-                                    {/* Notifications */}
-                                    <div className="bg-white rounded-lg shadow">
-                                        <div className="p-6 border-b">
-                                            <h2 className="text-lg font-semibold">Recent Notifications</h2>
-                                        </div>
-                                        <div className="p-6">
-                                            {notifications.length > 0 ? (
-                                                notifications.map(notification => (
-                                                    <div key={notification.id} className="py-3 border-b last:border-0">
-                                                        <p className="font-medium">{notification.text}</p>
-                                                        <p className="text-sm text-gray-500">{notification.time}</p>
+                                    <div className="w-full">
+                                        {/* Recent events */}
+                                        <div className="lg:col-span-2">
+                                            <div className="bg-white rounded-lg shadow-sm h-full">
+                                                {/* Header Section */}
+                                                <div className="p-6 border-b flex justify-between items-center">
+                                                    <h2 className="text-lg font-semibold">Recent Events</h2>
+                                                    <div className="flex items-center gap-3">
+                                                        <button
+                                                            onClick={exportToCSV}
+                                                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-500 to-green-700 rounded-lg shadow-md hover:from-green-600 hover:to-green-800 transform hover:scale-105 transition-all"
+                                                        >
+                                                            <Download size={16} />
+                                                            Export CSV
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setActiveTab('events')}
+                                                            className="text-blue-500 text-sm hover:underline"
+                                                        >
+                                                            View All
+                                                        </button>
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <p className="text-gray-500 text-center">No notifications</p>
-                                            )}
+                                                </div>
+
+                                                {/* Table Section */}
+                                                <div className="p-5 overflow-x-auto">
+                                                    {events.length > 0 ? (
+                                                        <table className="w-full">
+                                                            <thead>
+                                                                <tr className="text-left text-gray-500 border-b">
+                                                                    <th className="pb-3 px-5">Event</th>
+                                                                    <th className="pb-3 px-5">Description</th>
+                                                                    <th className="pb-3 px-5">Date & Time</th>
+                                                                    <th className="pb-3 px-5">Location</th>
+                                                                    <th className="pb-3 px-5 text-center">Attendees</th>
+                                                                    <th className="pb-3 px-5 w-20 text-center">View</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {events.map(event => (
+                                                                    <tr key={event._id} className="border-b last:border-0 hover:bg-gray-50 transition">
+                                                                        {/* Event Title */}
+                                                                        <td className="px-5 py-3 font-semibold text-gray-800 whitespace-nowrap">{event.title}</td>
+
+                                                                        {/* Description */}
+                                                                        <td className="px-5 py-3 text-gray-600 truncate max-w-xs">{event.description}</td>
+
+                                                                        {/* Date & Time */}
+                                                                        <td className="px-5 py-3 text-gray-700">
+                                                                            {formatDate(event.date)}
+                                                                            <br />
+                                                                            <span className="text-sm text-gray-500">{event.time}</span>
+                                                                        </td>
+
+                                                                        {/* Location */}
+                                                                        <td className="px-5 py-3 text-gray-700">{event.location}</td>
+
+                                                                        {/* Attendees Count */}
+                                                                        <td className="px-5 py-3 text-gray-700 text-center">{event.attendees?.length || 0}</td>
+
+                                                                        {/* View Registrations Button */}
+                                                                        <td className="px-5 py-3 text-center">
+                                                                            <ActionButton
+                                                                                onClick={() => fetchEventRegistrations(event._id)}
+                                                                                icon={<Eye size={18} />}
+                                                                                color="text-blue-500 hover:text-blue-700 transition"
+                                                                                title="View Registrations"
+                                                                            />
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    ) : (
+                                                        <div className="text-center py-8 text-gray-500">
+                                                            No events found.
+                                                            <button
+                                                                className="text-blue-500 hover:underline"
+                                                                onClick={() => { setActiveTab('events'); setIsCreatingEvent(true); }}
+                                                            >
+                                                                Create your first event?
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
+
                                 </>
                             )}
 
-                            {/* Events Management */}
+                            {/* Events List */}
                             {activeTab === 'events' && !isCreatingEvent && !isEditingEvent && (
-                                <div className="bg-white rounded-lg shadow p-6">
+                                <div className="bg-white rounded-lg shadow-sm p-6">
                                     <div className="flex justify-between items-center mb-6">
                                         <h2 className="text-lg font-semibold">Manage Events</h2>
                                         <button
                                             onClick={() => setIsCreatingEvent(true)}
-                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
                                         >
                                             <Plus size={18} className="mr-1" /> Create New Event
                                         </button>
                                     </div>
 
                                     <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="text-left text-gray-500 border-b">
-                                                    <th className="pb-3 pl-2">Event Name</th>
-                                                    <th className="pb-3">Date</th>
-                                                    <th className="pb-3">Location</th>
-                                                    <th className="pb-3">Capacity</th>
-                                                    <th className="pb-3">Attendees</th>
-                                                    <th className="pb-3">Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {events.map(event => (
-                                                    <tr key={event._id} className="border-b last:border-0 hover:bg-gray-50">
-                                                        <td className="py-4 pl-2 font-medium">{event.title}</td>
-                                                        <td className="py-4">{formatDate(event.date)}</td>
-                                                        <td className="py-4">{event.location}</td>
-                                                        <td className="py-4">{event.capacity}</td>
-                                                        <td className="py-4">{event.attendees?.length || 0}</td>
-                                                        <td className="py-4 space-x-2 flex">
-                                                            <button
-                                                                onClick={() => fetchEventRegistrations(event._id)}
-                                                                className="p-1 text-blue-500 hover:bg-blue-100 rounded"
-                                                                title="View Registrations"
-                                                            >
-                                                                <Eye size={18} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => startEditEvent(event)}
-                                                                className="p-1 text-green-500 hover:bg-green-100 rounded"
-                                                                title="Edit Event"
-                                                            >
-                                                                <Edit size={18} />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDeleteEvent(event._id)}
-                                                                className="p-1 text-red-500 hover:bg-red-100 rounded"
-                                                                title="Delete Event"
-                                                            >
-                                                                <Trash2 size={18} />
-                                                            </button>
-                                                        </td>
+                                        {events.length > 0 ? (
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="text-left text-gray-500 border-b">
+                                                        <th className="pb-3 pl-4">Event Name</th>
+                                                        <th className="pb-3">Date</th>
+                                                        <th className="pb-3">Location</th>
+                                                        <th className="pb-3">Capacity</th>
+                                                        <th className="pb-3">Attendees</th>
+                                                        <th className="pb-3">Actions</th>
                                                     </tr>
-                                                ))}
-                                                {events.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan="6" className="py-4 text-center text-gray-500">
-                                                            No events found
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody>
+                                                    {events.map(event => (
+                                                        <EventRow
+                                                            key={event._id}
+                                                            event={event}
+                                                            actions={
+                                                                <>
+                                                                    <ActionButton
+                                                                        onClick={() => fetchEventRegistrations(event._id)}
+                                                                        icon={<Eye size={18} />}
+                                                                        color="text-blue-500"
+                                                                        title="View Registrations"
+                                                                    />
+                                                                    <ActionButton
+                                                                        onClick={() => startEditEvent(event)}
+                                                                        icon={<Edit size={18} />}
+                                                                        color="text-green-500"
+                                                                        title="Edit Event"
+                                                                    />
+                                                                    <ActionButton
+                                                                        onClick={() => handleDeleteEvent(event._id)}
+                                                                        icon={<Trash2 size={18} />}
+                                                                        color="text-red-500"
+                                                                        title="Delete Event"
+                                                                    />
+                                                                </>
+                                                            }
+                                                        />
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : (
+                                            <div className="text-center py-8 text-gray-500">
+                                                No events found. Create your first event by clicking the button above.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
 
-                            {/* Create Event Form */}
-                            {activeTab === 'events' && isCreatingEvent && (
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <form onSubmit={handleCreateEvent}>
+                            {/* Create/Edit Event Form */}
+                            {activeTab === 'events' && (isCreatingEvent || isEditingEvent) && (
+                                <div className="bg-white rounded-lg shadow-sm p-6">
+                                    <form onSubmit={isCreatingEvent ? handleCreateEvent : handleUpdateEvent}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
@@ -485,7 +576,7 @@ export default function AdminDashboard(){
                                                     type="text"
                                                     value={eventForm.title}
                                                     onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                 />
                                             </div>
@@ -495,7 +586,7 @@ export default function AdminDashboard(){
                                                     type="text"
                                                     value={eventForm.location}
                                                     onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                 />
                                             </div>
@@ -505,7 +596,7 @@ export default function AdminDashboard(){
                                                     type="date"
                                                     value={eventForm.date}
                                                     onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                 />
                                             </div>
@@ -515,7 +606,7 @@ export default function AdminDashboard(){
                                                     type="time"
                                                     value={eventForm.time}
                                                     onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                 />
                                             </div>
@@ -525,7 +616,7 @@ export default function AdminDashboard(){
                                                     type="number"
                                                     value={eventForm.capacity}
                                                     onChange={(e) => setEventForm({ ...eventForm, capacity: parseInt(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                     min="1"
                                                 />
@@ -536,7 +627,7 @@ export default function AdminDashboard(){
                                                     type="number"
                                                     value={eventForm.price}
                                                     onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                     required
                                                     min="0"
                                                     step="0.01"
@@ -548,105 +639,7 @@ export default function AdminDashboard(){
                                             <textarea
                                                 value={eventForm.description}
                                                 onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                                                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                rows="4"
-                                                required
-                                            ></textarea>
-                                        </div>
-                                        <div className="mt-6 flex justify-end space-x-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsCreatingEvent(false)}
-                                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Create Event
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                            )}
-
-                            {/* Edit Event Form */}
-                            {activeTab === 'events' && isEditingEvent && (
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <form onSubmit={handleUpdateEvent}>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-                                                <input
-                                                    type="text"
-                                                    value={eventForm.title}
-                                                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                                <input
-                                                    type="text"
-                                                    value={eventForm.location}
-                                                    onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-                                                <input
-                                                    type="date"
-                                                    value={eventForm.date}
-                                                    onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
-                                                <input
-                                                    type="time"
-                                                    value={eventForm.time}
-                                                    onChange={(e) => setEventForm({ ...eventForm, time: e.target.value })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-                                                <input
-                                                    type="number"
-                                                    value={eventForm.capacity}
-                                                    onChange={(e) => setEventForm({ ...eventForm, capacity: parseInt(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                    min="1"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                                <input
-                                                    type="number"
-                                                    value={eventForm.price}
-                                                    onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
-                                                    className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                    min="0"
-                                                    step="0.01"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="mt-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                                            <textarea
-                                                value={eventForm.description}
-                                                onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                                                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                 rows="4"
                                                 required
                                             ></textarea>
@@ -655,122 +648,79 @@ export default function AdminDashboard(){
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    setIsEditingEvent(false);
+                                                    isCreatingEvent ? setIsCreatingEvent(false) : setIsEditingEvent(false);
                                                     setSelectedEvent(null);
                                                 }}
-                                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
+                                                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
                                             >
                                                 Cancel
                                             </button>
                                             <button
                                                 type="submit"
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                             >
-                                                Update Event
+                                                {isCreatingEvent ? 'Create Event' : 'Update Event'}
                                             </button>
                                         </div>
                                     </form>
                                 </div>
                             )}
-
                             {/* Registrations */}
                             {activeTab === 'registrations' && selectedEvent && (
-                                <div className="bg-white rounded-lg shadow p-6">
+                                <div className="bg-white rounded-lg shadow-sm p-6">
                                     <div className="mb-6">
-                                        <button
-                                            onClick={() => setActiveTab('events')}
-                                            className="text-blue-500 flex items-center"
-                                        >
-                                            <ChevronDown className="rotate-90 mr-1" size={16} /> Back to Events
-                                        </button>
-                                    </div>
+                                        <div className="mb-4 flex justify-between items-center">
+                                            <div>
+                                                <h3 className="text-lg font-medium">{selectedEvent.title}</h3>
+                                                <p className="text-gray-500">{formatDate(selectedEvent.date)} | {selectedEvent.location}</p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={exportRegistrationsToCSV}
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-full shadow-md hover:bg-green-700 hover:shadow-lg transition duration-300"
+                                                >
+                                                    <Download size={16} /> Export CSV
+                                                </button>
+                                            </div>
 
-                                    <div className="mb-4">
-                                        <h3 className="text-lg font-medium">{selectedEvent.title}</h3>
-                                        <p className="text-gray-500">{formatDate(selectedEvent.date)} | {selectedEvent.location}</p>
-                                    </div>
+                                        </div>
 
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead>
-                                                <tr className="text-left text-gray-500 border-b">
-                                                    <th className="pb-3">Name</th>
-                                                    <th className="pb-3">Email</th>
-                                                    <th className="pb-3">Registration Date</th>
-                                                    <th className="pb-3">Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {registrations.map(registration => (
-                                                    <tr key={registration._id} className="border-b last:border-0 hover:bg-gray-50">
-                                                        <td className="py-4">{registration.user.name}</td>
-                                                        <td className="py-4">{registration.user.email}</td>
-                                                        <td className="py-4">{formatDate(registration.registrationDate)}</td>
-                                                        <td className="py-4">
-                                                            <span className={`px-2 py-1 text-sm rounded-full ${registration.status === 'confirmed' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}}>
-{registration.status`}>
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                {registrations.length === 0 && (
-                                                    <tr>
-                                                        <td colSpan="4" className="py-4 text-center text-gray-500">
-                                                            No registrations found
-                                                        </td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
+                                        <div className="overflow-x-auto">
+                                            {registrations.length > 0 ? (
+                                                <table className="w-full">
+                                                    <thead>
+                                                        <tr className="text-left text-gray-500 border-b">
+                                                            <th className="pb-3 pl-4">Name</th>
+                                                            <th className="pb-3">Email</th>
+                                                            <th className="pb-3">Registered Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {registrations.map(registration => (
+                                                            <tr key={registration._id} className="border-b last:border-0 hover:bg-gray-50 transition-colors">
+                                                                <td className="py-4 pl-4">{registration.user?.email.split("@")[0] || 'N/A'}</td>
+                                                                <td className="py-4">{registration.user?.email || 'N/A'}</td>
+                                                                <td className="py-4">{formatDate(registration.createdAt)}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            ) : (
+                                                <div className="text-center py-8 text-gray-500">
+                                                    No registrations found for this event.
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Settings */}
-                            {activeTab === 'settings' && (
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <h2 className="text-lg font-semibold mb-6">Settings</h2>
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Admin Name</label>
-                                            <input
-                                                type="text"
-                                                value={admin?.adminName || ''}
-                                                onChange={(e) => setAdmin(prevState => ({ ...prevState, adminName: e.target.value }))}
-                                                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                            <input
-                                                type="email"
-                                                value={admin?.email || ''}
-                                                onChange={(e) => setAdmin(prevState => ({ ...prevState, email: e.target.value }))}
-                                                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Change Password</label>
-                                            <input
-                                                type="password"
-                                                placeholder="New Password"
-                                                className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <div className="flex justify-end">
-                                            <button
-                                                type="button"
-                                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                                            >
-                                                Save Changes
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+
+
                         </>
                     )}
                 </main>
             </div>
-        </div>);
+        </div>
+    );
 }

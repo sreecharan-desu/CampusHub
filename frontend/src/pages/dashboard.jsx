@@ -361,35 +361,7 @@ export default function Dashboard() {
 
                     {/* Events Sections */}
                     <div className="lg:col-span-3 space-y-8">
-                        {/* Registered Events Section */}
-                        <div className="bg-white shadow rounded-lg overflow-hidden">
-                            <div className="p-6 border-b bg-green-50">
-                                <h2 className="text-xl font-semibold text-green-800">My Registered Events</h2>
-                                <p className="text-gray-600 text-sm mt-1">Events you are attending</p>
-                            </div>
-                            <div className="p-6">
-                                {registeredEvents.length === 0 ? (
-                                    <EmptyState
-                                        message={
-                                            searchQuery
-                                                ? "No registered events match your search criteria."
-                                                : "You haven't registered for any events yet."
-                                        }
-                                        filteredBySearch={searchQuery && allRegisteredEvents.length > 0}
-                                    />
-                                ) : (
-                                    <div className="grid gap-6 md:grid-cols-2">
-                                        {registeredEvents.map((event) => (
-                                            <EventCard
-                                                key={event._id}
-                                                event={event}
-                                                isRegistered={true}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+
 
                         {/* Available Events Section */}
                         <div className="bg-white shadow rounded-lg overflow-hidden">
@@ -418,6 +390,36 @@ export default function Dashboard() {
                                         ))}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* Registered Events Section */}
+                            <div className="bg-white shadow rounded-lg overflow-hidden">
+                                <div className="p-6 border-b bg-green-50">
+                                    <h2 className="text-xl font-semibold text-green-800">My Registered Events</h2>
+                                    <p className="text-gray-600 text-sm mt-1">Events you are attending</p>
+                                </div>
+                                <div className="p-6">
+                                    {registeredEvents.length === 0 ? (
+                                        <EmptyState
+                                            message={
+                                                searchQuery
+                                                    ? "No registered events match your search criteria."
+                                                    : "You haven't registered for any events yet."
+                                            }
+                                            filteredBySearch={searchQuery && allRegisteredEvents.length > 0}
+                                        />
+                                    ) : (
+                                        <div className="grid gap-6 md:grid-cols-2">
+                                            {registeredEvents.map((event) => (
+                                                <EventCard
+                                                    key={event._id}
+                                                    event={event}
+                                                    isRegistered={true}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -55,20 +55,19 @@ const emailConfig = {
             return false;
         }
     },
-
     async sendWelcomeEmail(user) {
         return this.sendEmail(
             user.email,
             "🎉 Welcome to CampusHub! 🚀",
-            `Hey ${user.username}! 👋\n\nWelcome to **CampusHub** – your go-to platform for campus events! 🎓✨\n\nStay tuned for updates on meetups, workshops, and fun activities.\n\nIf you have any questions, we're here to help!\n\nHappy exploring! 🚀\nSreeCharan`
+            `Hey ${user.username}! 👋\n\nWelcome to **CampusHub** – your one-stop destination for campus events! 🎓🎉\n\nExplore exciting meetups, workshops, and activities happening around you. Never miss an event again! 🔥\n\n🔗 Visit now: [CampusHub](https://srees-campushub.vercel.app/)\n\nIf you have any questions, we're here to help.\n\nHappy exploring! 🚀\n\n**Team CampusHub**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
         );
     },
 
     async sendEventRegistrationEmail(event, user) {
         return this.sendEmail(
             user.email,
-            `You're Registered: ${event.title}! 🎟️`,
-            `Hey ${user.username},\n\nYou're successfully registered for **${event.title}**! 🎉\n\n📅 Date: ${event.date}\n⏰ Time: ${event.time}\n📍 Location: ${event.location}\n\nSee you there! 🚀\nSreeCharan`
+            `🎟️ You're Registered: ${event.title}!`,
+            `Hey ${user.username},\n\nAwesome! You've successfully registered for **${event.title}**! 🎉\n\n📅 **Date:** ${event.date}  \n⏰ **Time:** ${event.time}  \n📍 **Location:** ${event.location}  \n\nWe can't wait to see you there! 🙌\n\n🔗 View event details & more: [CampusHub](https://srees-campushub.vercel.app/)\n\nCheers,  \n**Team CampusHub 🚀**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
         );
     },
 
@@ -78,10 +77,11 @@ const emailConfig = {
 
         return this.sendEmail(
             users.map(user => user.email).join(", "),
-            `New Event: ${event.title}`,
-            `A new event "${event.title}" is happening on ${event.date} at ${event.time} in ${event.location}. Don't miss it!`
+            `🚀 New Event: ${event.title}!`,
+            `Hey there! 🎉\n\nA brand-new event **"${event.title}"** is happening soon! Don't miss out! 🔥\n\n📅 **Date:** ${event.date}  \n⏰ **Time:** ${event.time}  \n📍 **Location:** ${event.location}  \n\nBe part of the experience and make unforgettable memories! 💡🎭\n\n🔗 Register now & explore more events: [CampusHub](https://srees-campushub.vercel.app/)\n\nSee you there!  \n**Team CampusHub 🚀**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
         );
     }
+
 };
 
 // Middleware

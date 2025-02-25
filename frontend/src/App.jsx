@@ -14,6 +14,12 @@ function KeyboardDetector() {
   const navigate = useNavigate();
   const [, setKeySequence] = useState("");
 
+  useEffect(()=>{
+    if(!localStorage.getItem("token")){
+        navigate('/')
+    }
+},[])
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       // Add the pressed key to our sequence

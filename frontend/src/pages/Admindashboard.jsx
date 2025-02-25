@@ -41,6 +41,12 @@ export default function AdminDashboard() {
         }
     }, [admin]);
 
+
+    useEffect(()=>{
+        if(!localStorage.getItem("token")){
+            navigate('/')
+        }
+    },[])
     // Fetch initial data
     useEffect(() => {
         fetchProfile();

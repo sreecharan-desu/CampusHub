@@ -29,7 +29,6 @@ const eventSchema = z.object({
     imageUrl: z.string().url().optional(),
     videoUrl: z.string().url().optional()
 });
-
 // Email Configuration
 const emailConfig = {
     transporter: nodemailer.createTransport({
@@ -39,14 +38,15 @@ const emailConfig = {
             pass: process.env.EMAIL_PASS
         }
     }),
-
-    async sendEmail(to, subject, text) {
+    async sendEmail(to, subject, htmlContent) {
         try {
             const info = await this.transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to,
                 subject,
-                text
+                html: htmlContent, // Using HTML instead of text
+                // Providing text alternative for email clients that don't support HTML
+                text: htmlContent.replace(/<[^>]*>/g, '') // Simple HTML tag stripping
             });
             console.log("Email sent successfully:", info.response);
             return true;
@@ -56,32 +56,98 @@ const emailConfig = {
         }
     },
     async sendWelcomeEmail(user) {
+        const username = user.username ? user.username : user.email.split("@")[0];
         return this.sendEmail(
             user.email,
             "🎉 Welcome to CampusHub! 🚀",
-            `Hey ${user.username ? user.username : user.email.split("@")[0]}! 👋\n\nWelcome to **CampusHub** – your one-stop destination for campus events! 🎓🎉\n\nExplore exciting meetups, workshops, and activities happening around you. Never miss an event again! 🔥\n\n🔗 Visit now: [CampusHub](https://srees-campushub.vercel.app/)\n\nIf you have any questions, we're here to help.\n\nHappy exploring! 🚀\n\n**Team CampusHub**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
+            `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h1 style="color: #4a6ee0; text-align: center;">Welcome to CampusHub! 🚀</h1>
+                <p style="font-size: 16px; line-height: 1.5;">Hey <strong>${username}</strong>! 👋</p>
+                <p style="font-size: 16px; line-height: 1.5;">Welcome to <strong>CampusHub</strong> – your one-stop destination for campus events! 🎓🎉</p>
+                <p style="font-size: 16px; line-height: 1.5;">Explore exciting meetups, workshops, and activities happening around you. Never miss an event again! 🔥</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://srees-campushub.vercel.app/" style="background-color: #4a6ee0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Visit CampusHub</a>
+                </div>
+                <p style="font-size: 16px; line-height: 1.5;">If you have any questions, we're here to help.</p>
+                <p style="font-size: 16px; line-height: 1.5;">Happy exploring! 🚀</p>
+                <p style="font-size: 16px; line-height: 1.5;"><strong>Team CampusHub</strong></p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="font-size: 14px; color: #777; text-align: center;">
+                    <a href="https://srees-campushub.vercel.app/" style="color: #4a6ee0; text-decoration: none;">CampusHub</a>
+                </p>
+            </div>
+            `
         );
     },
-
     async sendEventRegistrationEmail(event, user) {
+        const username = user.username ? user.username : user.email.split("@")[0];
         return this.sendEmail(
             user.email,
             `🎟️ You're Registered: ${event.title}!`,
-            `Hey ${user.username ? user.username : user.email.split("@")[0]}!,\n\nAwesome! You've successfully registered for **${event.title}**! 🎉\n\n📅 **Date:** ${event.date}  \n⏰ **Time:** ${event.time}  \n📍 **Location:** ${event.location}  \n\nWe can't wait to see you there! 🙌\n\n🔗 View event details & more: [CampusHub](https://srees-campushub.vercel.app/)\n\nCheers,  \n**Team CampusHub 🚀**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
+            `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h1 style="color: #4a6ee0; text-align: center;">You're Registered! 🎉</h1>
+                <p style="font-size: 16px; line-height: 1.5;">Hey <strong>${username}</strong>!</p>
+                <p style="font-size: 16px; line-height: 1.5;">Awesome! You've successfully registered for <strong>${event.title}</strong>! 🎉</p>
+                
+                <div style="background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                    <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${event.date}</p>
+                    <p style="margin: 8px 0;"><strong>⏰ Time:</strong> ${event.time}</p>
+                    <p style="margin: 8px 0;"><strong>📍 Location:</strong> ${event.location}</p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.5;">We can't wait to see you there! 🙌</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://srees-campushub.vercel.app/" style="background-color: #4a6ee0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Event Details</a>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.5;">Cheers,<br><strong>Team CampusHub 🚀</strong></p>
+                
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="font-size: 14px; color: #777; text-align: center;">
+                    <a href="https://srees-campushub.vercel.app/" style="color: #4a6ee0; text-decoration: none;">CampusHub</a>
+                </p>
+            </div>
+            `
         );
     },
-
     async sendEventNotification(event) {
         const users = await User.find().select("email");
         if (!users.length) return;
-
+        
         return this.sendEmail(
             users.map(user => user.email).join(", "),
             `🚀 New Event: ${event.title}!`,
-            `Hey there! 🎉\n\nA brand-new event **"${event.title}"** is happening soon! Don't miss out! 🔥\n\n📅 **Date:** ${event.date}  \n⏰ **Time:** ${event.time}  \n📍 **Location:** ${event.location}  \n\nBe part of the experience and make unforgettable memories! 💡🎭\n\n🔗 Register now & explore more events: [CampusHub](https://srees-campushub.vercel.app/)\n\nSee you there!  \n**Team CampusHub 🚀**\n\n🌐 [CampusHub](https://srees-campushub.vercel.app/)`
+            `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                <h1 style="color: #4a6ee0; text-align: center;">New Event Alert! 🔔</h1>
+                <p style="font-size: 16px; line-height: 1.5;">Hey there! 🎉</p>
+                <p style="font-size: 16px; line-height: 1.5;">A brand-new event <strong>"${event.title}"</strong> is happening soon! Don't miss out! 🔥</p>
+                
+                <div style="background-color: #f8f9fa; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                    <p style="margin: 8px 0;"><strong>📅 Date:</strong> ${event.date}</p>
+                    <p style="margin: 8px 0;"><strong>⏰ Time:</strong> ${event.time}</p>
+                    <p style="margin: 8px 0;"><strong>📍 Location:</strong> ${event.location}</p>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.5;">Be part of the experience and make unforgettable memories! 💡🎭</p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://srees-campushub.vercel.app/" style="background-color: #4a6ee0; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">Register Now</a>
+                </div>
+                
+                <p style="font-size: 16px; line-height: 1.5;">See you there!<br><strong>Team CampusHub 🚀</strong></p>
+                
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+                <p style="font-size: 14px; color: #777; text-align: center;">
+                    <a href="https://srees-campushub.vercel.app/" style="color: #4a6ee0; text-decoration: none;">CampusHub</a>
+                </p>
+            </div>
+            `
         );
     }
-
 };
 
 // Middleware

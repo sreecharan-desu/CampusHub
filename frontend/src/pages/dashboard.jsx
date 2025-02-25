@@ -55,6 +55,15 @@ export default function Dashboard() {
         fetchData();
     }, [navigate]);
 
+    const images_urls = [
+        "./bg1.svg", "./bg2.svg", "./bg3.svg","./bg4.svg","./bg5.svg","./bg6.svg","./bg7.svg"
+    ]
+
+    const getRandomeimageIndexes = () => {
+        const randomNumberBetween0and2 = Math.floor(Math.random() * 6);
+        return randomNumberBetween0and2;
+    }
+
     const handleRegisterForEvent = async (eventId) => {
         try {
             setRegistering(true);
@@ -185,14 +194,15 @@ export default function Dashboard() {
                     />
                 ) : (
                     <div className="flex items-center justify-center w-full h-full bg-gray-200">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-16 h-16 text-gray-500"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                        >
-                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm1 14h-2v-2h2Zm0-4h-2V7h2Z" />
-                        </svg>
+
+                        <img
+                            src={images_urls[getRandomeimageIndexes()]}
+                            alt={event.title}
+                            className="w-full h-full object-contain"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                        />
+
+
                     </div>
                 )}
 

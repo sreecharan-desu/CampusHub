@@ -9,6 +9,7 @@ import {
     Download
 } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminDashboard() {
     const [admin, setAdmin] = useRecoilState(adminState);
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
     const [notifications, setNotifications] = useState([]);
     const [isCreatingEvent, setIsCreatingEvent] = useState(false);
     const [isEditingEvent, setIsEditingEvent] = useState(false);
+    const navigate = useNavigate();
     const [eventForm, setEventForm] = useState({
         title: '',
         description: '',
@@ -207,6 +209,8 @@ export default function AdminDashboard() {
 
     const handleLogout = () => {
         setAdmin(null);
+        localStorage.clear()
+        navigate('/')
         axios.defaults.headers.common['Authorization'] = '';
         // Redirect to login would happen here in a real app
     };

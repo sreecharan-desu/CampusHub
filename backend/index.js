@@ -116,7 +116,7 @@ const emailConfig = {
     async sendEventNotification(event) {
         const users = await User.find().select("email");
         if (!users.length) return;
-        
+
         return this.sendEmail(
             users.map(user => user.email).join(", "),
             `🚀 New Event: ${event.title}!`,

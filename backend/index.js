@@ -446,6 +446,11 @@ const adminRoutes = {
 
 // Routes
 app.get('/', (req, res) => res.send("Hello from backend"));
+app.get('/getevents', async (req, res) => {
+    const events = await Event.find();
+    res.json(events);
+}
+);
 
 // Admin routes
 app.post('/admin/signup', adminRoutes.signup);

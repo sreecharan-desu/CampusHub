@@ -1,8 +1,12 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 export default function LandingPage() {
   const navigateTo = useNavigate();
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   // Animation variants
   const fadeIn = {
@@ -13,6 +17,29 @@ export default function LandingPage() {
   const slideUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
+  };
+
+  // Fetch events when component mounts
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('https://campushub-api.vercel.app/getevents');
+        const data = await response.json();
+        setEvents(data);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
+
+  // Format date for display
+  const formatDate = (dateString) => {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
   // Key features data
@@ -39,6 +66,16 @@ export default function LandingPage() {
     }
   ];
 
+  // Handle event card click to open modal
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+  };
+
+  // Close event modal
+  const closeEventModal = () => {
+    setSelectedEvent(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navbar */}
@@ -54,6 +91,7 @@ export default function LandingPage() {
             <span className="font-bold text-xl text-gray-900">CampusHub</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
+            <a href="#events" className="text-gray-600 hover:text-blue-600 font-medium">Events</a>
             <a href="#features" className="text-gray-600 hover:text-blue-600 font-medium">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-blue-600 font-medium">How It Works</a>
             <button
@@ -130,51 +168,101 @@ export default function LandingPage() {
                 >
                   Get Started
                 </button>
+                <a 
+                  href="#events" 
+                  className="bg-white hover:bg-gray-100 text-blue-600 border border-blue-200 px-8 py-3 rounded-lg font-medium text-lg shadow-sm hover:shadow-md transition-all"
+                >
+                  Browse Events
+                </a>
               </motion.div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Preview Section */}
-      <motion.section
-        className="py-16 bg-white"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-      >
+      {/* Events Section */}
+      <section id="events" className="py-16 bg-white">
         <div className="container mx-auto px-6">
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl overflow-hidden shadow-2xl">
-            <div className="px-6 py-8 md:px-10 md:py-12">
-              <motion.div
-                initial={{ y: 100, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-                className="bg-white/10 backdrop-blur-md rounded-xl overflow-hidden shadow-inner"
-              >
-                <div className="h-8 bg-white/10 flex items-center px-4">
-                  <div className="flex gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500 opacity-70" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500 opacity-70" />
-                    <div className="w-3 h-3 rounded-full bg-green-500 opacity-70" />
-                  </div>
-                </div>
-                <div className="p-4 bg-white/5">
-                  <img
-                    src="/dashboard-preview.png"
-                    alt="CampusHub Dashboard Preview"
-                    className="w-full rounded-lg shadow-lg"
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/1200x675?text=CampusHub+Dashboard"
-                      e.target.alt = "CampusHub Dashboard Placeholder"
-                    }}
-                  />
-                </div>
-              </motion.div>
+          <motion.div
+            className="text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+          >
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Upcoming Campus Events</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Discover whats happening around campus and register for events that interest you
+            </p>
+          </motion.div>
+
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          </div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">No upcoming events at the moment. Check back soon!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {events.map((event, index) => (
+                <motion.div
+                  key={event._id}
+                  className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow border border-gray-100 cursor-pointer"
+                  initial="hidden"
+                  animate="visible"
+                  variants={slideUp}
+                  transition={{ duration: 0.6, delay: 0.1 * index }}
+                  onClick={() => handleEventClick(event)}
+                >
+                  <div className="h-48 bg-blue-50 relative">
+                    {event.imageUrl ? (
+                      <img 
+                        src={event.imageUrl} 
+                        alt={event.title} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/400x240?text=Event"
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-100 to-indigo-100">
+                        <span className="text-5xl">{event.title.charAt(0)}</span>
+                      </div>
+                    )}
+                    <div className="absolute top-4 right-4 bg-blue-600 text-white text-sm px-3 py-1 rounded-full">
+                      {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-1">{event.title}</h3>
+                    <div className="flex items-center text-gray-500 mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span className="text-sm line-clamp-1">{event.location}</span>
+                    </div>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{event.description}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="text-blue-600 font-medium">{event.time}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateTo("/signin");
+                        }}
+                        className="bg-blue-100 hover:bg-blue-200 text-blue-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Register
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
-      </motion.section>
+      </section>
 
       {/* Features Section */}
       <section id="features" className="py-20 bg-gray-50">
@@ -290,6 +378,98 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" onClick={closeEventModal}></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+            <motion.div
+              className="inline-block overflow-hidden text-left align-bottom bg-white rounded-lg shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+            >
+              <div className="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="w-full">
+                    {selectedEvent.imageUrl ? (
+                      <img 
+                        src={selectedEvent.imageUrl} 
+                        alt={selectedEvent.title} 
+                        className="w-full h-56 object-cover rounded-lg mb-4"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/600x300?text=Event"
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-56 flex items-center justify-center bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg mb-4">
+                        <span className="text-6xl">{selectedEvent.title.charAt(0)}</span>
+                      </div>
+                    )}
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedEvent.title}</h3>
+                    <div className="flex flex-col gap-2 mb-4">
+                      <div className="flex items-center text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        <span>{formatDate(selectedEvent.date)}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{selectedEvent.time}</span>
+                      </div>
+                      <div className="flex items-center text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>{selectedEvent.location}</span>
+                      </div>
+                    </div>
+                    <p className="text-gray-600 mb-6">{selectedEvent.description}</p>
+                    {selectedEvent.videoUrl && (
+                      <div className="mb-6">
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">Event Promo</h4>
+                        <div className="aspect-w-16 aspect-h-9 bg-gray-100 rounded-lg">
+                          <iframe 
+                            src={selectedEvent.videoUrl} 
+                            className="w-full h-full rounded-lg" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowFullScreen
+                          ></iframe>
+                        </div>
+                      </div>
+                    )}
+                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 text-blue-700 text-center">
+                      <p>You need to sign in to register for this event</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={() => navigateTo("/signin")}
+                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Sign In to Register
+                </button>
+                <button
+                  type="button"
+                  onClick={closeEventModal}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:w-auto sm:text-sm"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

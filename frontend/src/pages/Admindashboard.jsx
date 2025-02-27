@@ -218,7 +218,7 @@ export default function AdminDashboard() {
         a.download = "events.csv";
         a.click();
         URL.revokeObjectURL(url);
-        
+
         showToast("Events exported successfully", "success");
     };
 
@@ -242,7 +242,7 @@ export default function AdminDashboard() {
         a.download = `registrations_${selectedEvent.title.replace(/\s+/g, "_")}.csv`;
         a.click();
         URL.revokeObjectURL(url);
-        
+
         showToast("Registrations exported successfully", "success");
     };
 
@@ -315,10 +315,10 @@ export default function AdminDashboard() {
 
                 {/* Toast Notifications */}
                 {toast.show && (
-                    <Toast 
-                        message={toast.message} 
-                        type={toast.type} 
-                        onClose={() => setToast({ show: false, message: '', type: '' })} 
+                    <Toast
+                        message={toast.message}
+                        type={toast.type}
+                        onClose={() => setToast({ show: false, message: '', type: '' })}
                     />
                 )}
 
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
                         <>
                             {/* Dashboard Content */}
                             {activeTab === 'dashboard' && (
-                                <DashboardView 
+                                <DashboardView
                                     events={events}
                                     formatDate={formatDate}
                                     exportToCSV={exportToCSV}
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
 
                             {/* Events List */}
                             {activeTab === 'events' && !isCreatingEvent && !isEditingEvent && (
-                                <EventsView 
+                                <EventsView
                                     events={events}
                                     setIsCreatingEvent={setIsCreatingEvent}
                                     fetchEventRegistrations={fetchEventRegistrations}
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
 
                             {/* Create/Edit Event Form */}
                             {activeTab === 'events' && (isCreatingEvent || isEditingEvent) && (
-                                <EventForm 
+                                <EventForm
                                     eventForm={eventForm}
                                     setEventForm={setEventForm}
                                     isCreatingEvent={isCreatingEvent}
@@ -369,7 +369,7 @@ export default function AdminDashboard() {
 
                             {/* Registrations */}
                             {activeTab === 'registrations' && selectedEvent && (
-                                <RegistrationsView 
+                                <RegistrationsView
                                     selectedEvent={selectedEvent}
                                     registrations={registrations}
                                     formatDate={formatDate}
@@ -387,11 +387,11 @@ export default function AdminDashboard() {
 // src/components/admin/Sidebar.jsx
 import { Calendar, PieChart } from 'lucide-react';
 
-export function Sidebar({ 
-    sidebarCollapsed, 
-    setSidebarCollapsed, 
-    activeTab, 
-    setActiveTab, 
+export function Sidebar({
+    sidebarCollapsed,
+    setSidebarCollapsed,
+    activeTab,
+    setActiveTab,
     handleLogout,
     setSelectedEvent,
     setIsCreatingEvent,
@@ -454,13 +454,13 @@ export function Sidebar({
 }
 
 // src/components/admin/DashboardView.jsx
-import {  Users, Eye, Download } from 'lucide-react';
+import { Users, Eye, Download } from 'lucide-react';
 
-export function DashboardView({ 
-    events, 
-    formatDate, 
-    exportToCSV, 
-    setActiveTab, 
+export function DashboardView({
+    events,
+    formatDate,
+    exportToCSV,
+    setActiveTab,
     fetchEventRegistrations,
     setIsCreatingEvent
 }) {
@@ -704,11 +704,11 @@ export function EventsView({
 
 // src/components/admin/RegistrationsView.jsx
 
-export  function RegistrationsView({ 
-    selectedEvent, 
-    registrations, 
-    formatDate, 
-    exportRegistrationsToCSV 
+export function RegistrationsView({
+    selectedEvent,
+    registrations,
+    formatDate,
+    exportRegistrationsToCSV
 }) {
     return (
         <div className="bg-white rounded-lg shadow-sm p-6">
@@ -759,7 +759,7 @@ export  function RegistrationsView({
     );
 }
 
-export  function EventForm({
+export function EventForm({
     eventForm,
     setEventForm,
     isCreatingEvent,
@@ -857,41 +857,6 @@ export  function EventForm({
                         />
                     </div>
 
-                    {/* Capacity */}
-                    <div>
-                        <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">
-                            Capacity *
-                        </label>
-                        <input
-                            type="number"
-                            id="capacity"
-                            name="capacity"
-                            required
-                            min="1"
-                            value={eventForm.capacity}
-                            onChange={(e) => setEventForm({ ...eventForm, capacity: parseInt(e.target.value) })}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Maximum number of attendees"
-                        />
-                    </div>
-
-                    {/* Price */}
-                    <div>
-                        <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                            Price ($)
-                        </label>
-                        <input
-                            type="number"
-                            id="price"
-                            name="price"
-                            min="0"
-                            step="0.01"
-                            value={eventForm.price}
-                            onChange={(e) => setEventForm({ ...eventForm, price: parseFloat(e.target.value) })}
-                            className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter event price (0 for free events)"
-                        />
-                    </div>
                 </div>
 
                 <div className="mt-8 flex justify-end space-x-3">
@@ -921,7 +886,7 @@ export  function EventForm({
 }
 
 
-export  function LoadingSpinner() {
+export function LoadingSpinner() {
     return (
         <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>

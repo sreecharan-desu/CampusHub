@@ -446,12 +446,12 @@ const adminRoutes = {
 
 // Routes
 app.get('/', (req, res) => res.send("Techzeon Events Registration Portal API"));
-app.get('/getevents',async (req,res)=>{
-    const events = await Event.find()
-    res.json({
-        events
-    })
-})
+// app.get('/getevents',async (req,res)=>{
+//     const events = await Event.find()
+//     res.json({
+//         events
+//     })
+// })
 
 // Public event routes (no auth required)
 app.get('/events', publicEventRoutes.getAllEvents);

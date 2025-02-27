@@ -445,7 +445,28 @@ const adminRoutes = {
 };
 
 // Routes
-app.get('/', (req, res) => res.send("Hello from backend"));
+app.get('/', (req, res) => res.send("Techzeon Events Registration Portal API"));
+app.get('/getevents',async (req,res)=>{
+    const events = await Event.find()
+    res.json({
+        events
+    })
+})
+
+// Public event routes (no auth required)
+app.get('/events', publicEventRoutes.getAllEvents);
+app.get('/events/upcoming', publicEventRoutes.getUpcomingEvents);
+app.get('/events/:id', publicEventRoutes.getEventById);
+
+// Student routes
+app.post('/auth/signup', userRoutes.signup);
+app.post('/auth/signin', userRoutes.signin);
+app.get('/user/profile', authenticateToken, userRoutes.getProfile);
+app.put('/user/profile', authenticateToken, userRoutes.updateProfile);
+app.post('/user/register-event/:id', authenticateToken, userRoutes.registerForEvent);
+app.delete('/user/cancel-registration/:id', authenticateToken, userRoutes.cancelRegistration);
+app.get('/user/registered-events', authenticateToken, userRoutes.getRegisteredEvents);
+app.get('/user/participation-history', authenticateToken, userRoutes.getParticipationHistory);
 
 // Admin routes
 app.post('/admin/signup', adminRoutes.signup);
